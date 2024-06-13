@@ -1,0 +1,38 @@
+import pandas as pd
+
+women_df =pd.read_csv("women_results.csv", parse_dates=["date"])
+men_df = pd.read_csv("men_results.csv", parse_dates=["date"])
+
+women_men = pd.concat([women_df, men_df], ignore_index=False, keys=["women", "men"])
+
+# Exploratory data analysis
+women_men.info()
+women_men["tournament"].value_counts()
+
+# Filtering the data
+w_m_filt = women_men[ (women_men["tournament"] == "FIFA World Cup") & (women_men["date"] > "2002-01-01")].reset_index()
+
+# Total scores
+w_m_filt["total_score"] = w_m_filt["home_score"] + w_m_filt["away_score"]
+
+# Pivoting DataFrame
+pivot = w_m_filt.pivot(columns="level_0", values="total_score")
+
+# Performing the hypothesis test Wilcoxon-Mann-Whitney
+import pingouin
+mwu = pingouin.mwu(x=pivot["women"],
+            y=pivot["men"],
+            alternative="greater")
+
+value = mwu["p-val"]
+p_val = value[0]
+
+# Significance level of 10%
+alpha = 0.01
+if p_val <= alpha :
+    result = "reject"
+else :
+    result = "fail to reject"
+    
+result_dict = {"p_val" : p_val, "result":result}
+print(result_dict)
